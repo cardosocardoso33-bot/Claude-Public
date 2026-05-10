@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>AlmoçaAí — Centro Velho SP</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0f0f1a;
+      color: #fff;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* ── Header ── */
+    .header {
+      width: 100%;
+      max-width: 420px;
+      padding: 14px 20px 6px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo { font-size: 22px; font-weight: 900; letter-spacing: -0.5px; }
+    .logo span { color: #f97316; }
+    .counter { font-size: 13px; color: rgba(255,255,255,0.45); font-weight: 600; }
+
+    /* ── Stack ── */
+    .stack {
+      width: 100%;
+      max-width: 420px;
+      flex: 1;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 16px;
+    }
+
+    /* ── Card ── */
+    .card {
+      position: absolute;
+      width: 100%;
+      max-width: 388px;
+      height: min(500px, calc(100dvh - 200px));
+      border-radius: 22px;
+      overflow: hidden;
+      cursor: grab;
+      will-change: transform;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+      transform-origin: center 120%;
+      transition: transform 0.3s ease, opacity 0.3s ease;
+    }
+    .card:active { cursor: grabbing; }
+    .card.no-transition { transition: none !important; }
+
+    .card-behind-1 {
+      transform: scale(0.94) translateY(14px);
+      filter: brightness(0.7);
+      z-index: 1;
+      pointer-events: none;
+    }
+    .card-behind-2 {
+      transform: scale(0.88) translateY(28px);
+      filter: brightness(0.5);
+      z-index: 0;
+      pointer-events: none;
+    }
+    .card-top { z-index: 10; }
+
+    .card-photo {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      pointer-events: none;
+    }
+    .card-photo-fallback {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 80px;
+    }
+
+    .card-overlay {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      padding: 60px 18px 18px;
+      background: linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.5) 60%, transparent 100%);
+      pointer-events: none;
+    }
+    .card-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-bottom: 8px;
+    }
+    .tag {
+      background: rgba(255,255,255,0.18);
+      backdrop-filter: blur(6px);
+      border-radius: 100px;
+      padding: 3px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+    }
+    .tag.hot { background: rgba(249,115,22,0.75); }
+    .card-name { font-size: 24px; font-weight: 900; line-height: 1.1; margin-bottom: 3px; }
+    .card-tagline { font-size: 13px; color: rgba(255,255,255,0.75); margin-bottom: 6px; }
+    .card-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      color: rgba(255,255,255,0.65);
+    }
+    .price { color: #4ade80; font-weight: 800; font-size: 15px; }
+
+    /* ── Stamps ── */
+    .stamp {
+      position: absolute;
+      top: 48px;
+      font-size: 28px;
+      font-weight: 900;
+      padding: 6px 14px;
+      border-radius: 8px;
+      border-width: 3px;
+      border-style: solid;
+      opacity: 0;
+      pointer-events: none;
+      letter-spacing: 2px;
+      text-shadow: none;
+    }
+    .stamp-like { left: 16px; color: #4ade80; border-color: #4ade80; transform: rotate(-12deg); }
+    .stamp-nope { right: 16px; color: #f87171; border-color: #f87171; transform: rotate(12deg); }
+
+    /* ── Buttons ── */
+    .actions {
+      width: 100%;
+      max-width: 420px;
+      padding: 12px 20px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+    }
+    .btn-action {
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.12s, box-shadow 0.12s;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.35);
+    }
+    .btn-action:active { transform: scale(0.88) !important; }
+    .btn-sm { width: 50px; height: 50px; font-size: 20px; background: #1e1e30; }
+    .btn-lg { width: 66px; height: 66px; font-size: 28px; }
+    .btn-nope { background: linear-gradient(135deg, #3d1515, #5c1e1e); }
+    .btn-like { background: linear-gradient(135deg, #153d20, #1a5c2a); }
+
+    /* ── Finish screen ── */
+    .finish-screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      padding: 32px 20px;
+      text-align: center;
+      flex: 1;
+    }
+    .finish-screen.show { display: flex; }
+    .finish-screen h2 { font-size: 26px; font-weight: 900; }
+    .finish-screen p { color: rgba(255,255,255,0.5); font-size: 15px; }
+    .liked-list { width: 100%; max-width: 380px; display: flex; flex-direction: column; gap: 10px; }
+    .liked-item {
+      background: #1e1e30;
+      border-radius: 14px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-align: left;
+      text-decoration: none;
+      color: white;
+    }
+    .liked-emoji { font-size: 28px; }
+    .liked-name { font-weight: 700; font-size: 15px; }
+    .liked-addr { font-size: 12px; color: rgba(255,255,255,0.5); margin-top: 2px; }
+    .btn-restart {
+      background: #f97316;
+      border: none;
+      border-radius: 14px;
+      color: white;
+      font-size: 15px;
+      font-weight: 700;
+      padding: 14px 32px;
+      cursor: pointer;
+      margin-top: 4px;
+    }
+
+    /* ── Match screen ── */
+    .match-screen {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.96);
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0 0 24px;
+      overflow-y: auto;
+      transform: translateY(100%);
+      transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .match-screen.show { transform: translateY(0); }
+
+    .match-hero {
+      width: 100%;
+      max-width: 420px;
+      height: 280px;
+      position: relative;
+      flex-shrink: 0;
+    }
+    .match-hero img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .match-hero-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.95) 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      padding: 20px;
+    }
+    .match-badge {
+      font-size: 36px;
+      font-weight: 900;
+      color: #4ade80;
+      text-shadow: 0 0 30px rgba(74,222,128,0.5);
+      margin-bottom: 4px;
+    }
+    .match-restaurant-name {
+      font-size: 28px;
+      font-weight: 900;
+      text-align: center;
+      line-height: 1.1;
+    }
+
+    .match-body {
+      width: 100%;
+      max-width: 420px;
+      padding: 20px 20px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .info-card {
+      background: #1a1a2a;
+      border-radius: 14px;
+      padding: 14px 16px;
+    }
+    .info-label {
+      font-size: 10px;
+      color: rgba(255,255,255,0.35);
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      margin-bottom: 5px;
+    }
+    .info-value { font-size: 14px; line-height: 1.5; }
+    .info-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .info-tag {
+      background: #2a2a3e;
+      border-radius: 100px;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .btn-maps {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, #f97316, #ef4444);
+      border: none;
+      border-radius: 16px;
+      color: white;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      text-decoration: none;
+      margin-top: 4px;
+    }
+    .btn-continue {
+      width: 100%;
+      padding: 14px;
+      background: transparent;
+      border: 1.5px solid rgba(255,255,255,0.15);
+      border-radius: 16px;
+      color: rgba(255,255,255,0.5);
+      font-size: 14px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="logo">Almoça<span>Aí</span> 🍽️</div>
+    <div class="counter" id="counter"></div>
+  </div>
+
+  <div class="stack" id="stack"></div>
+
+  <div class="finish-screen" id="finishScreen">
+    <div style="font-size:56px">🎉</div>
+    <h2>Você viu tudo!</h2>
+    <p>Aqui estão os lugares que você curtiu:</p>
+    <div class="liked-list" id="likedList"></div>
+    <button class="btn-restart" onclick="restart()">Ver de novo</button>
+  </div>
+
+  <div class="actions" id="actions">
+    <button class="btn-action btn-sm" onclick="undoSwipe()" title="Desfazer">↩️</button>
+    <button class="btn-action btn-lg btn-nope" onclick="swipeLeft()">❌</button>
+    <button class="btn-action btn-lg btn-like" onclick="swipeRight()">💚</button>
+    <button class="btn-action btn-sm" id="infoBtn" onclick="showCurrentInfo()" title="Detalhes">ℹ️</button>
+  </div>
+
+  <!-- Match / Detail screen -->
+  <div class="match-screen" id="matchScreen">
+    <div class="match-hero">
+      <img id="matchHeroImg" src="" alt="" />
+      <div class="match-hero-overlay">
+        <div class="match-badge" id="matchBadge">É ESSE! 🎉</div>
+        <div class="match-restaurant-name" id="matchName"></div>
+      </div>
+    </div>
+    <div class="match-body">
+      <div class="info-card">
+        <div class="info-label">📍 Endereço</div>
+        <div class="info-value" id="matchAddress"></div>
+      </div>
+      <div class="info-card">
+        <div class="info-label">🕐 Horário</div>
+        <div class="info-value" id="matchHours"></div>
+      </div>
+      <div class="info-card">
+        <div class="info-label">💰 Preço médio</div>
+        <div class="info-value" id="matchPrice"></div>
+      </div>
+      <div class="info-card">
+        <div class="info-label">📝 Sobre</div>
+        <div class="info-value" id="matchDesc"></div>
+        <div class="info-tags" id="matchTags"></div>
+      </div>
+      <a class="btn-maps" id="matchMapsBtn" href="#" target="_blank" rel="noopener">
+        📍 Abrir no Google Maps
+      </a>
+      <button class="btn-continue" id="matchContinueBtn" onclick="hideMatch()">Continuar vendo opções</button>
+    </div>
+  </div>
+
+  <script>
+    const restaurants = [
+      {
+        name: 'A Casa do Porco',
+        emoji: '🐷',
+        tagline: '12º melhor restaurante do mundo',
+        tags: ['🏆 Top Mundial', '⭐ Michelin', '🐷 Porco'],
+        hotTag: '🏆 Top Mundial',
+        description: 'Do focinho ao rabo — nenhuma parte desperdiçada. Chef Jefferson Rueda transforma porco em alta gastronomia acessível. Bib Gourmand Michelin 2025.',
+        address: 'R. Araújo, 124 — República, SP',
+        hours: 'Seg–Sáb 12h–0h | Dom 12h–17h',
+        price: 'R$ 50–220 / pessoa',
+        priceLevel: '$$',
+        mapsUrl: 'https://maps.google.com/?q=A+Casa+do+Porco+Rua+Araujo+124+Sao+Paulo',
+        image: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&h=800&fit=crop&auto=format',
+        bg: '#3d1a00',
+      },
+      {
+        name: 'Bar Brahma',
+        emoji: '🍺',
+        tagline: 'O bar mais famoso de SP desde 1948',
+        tags: ['🍺 Chopp', '🎵 Música ao Vivo', '📜 Desde 1948'],
+        hotTag: null,
+        description: 'Ícone paulistano na esquina da Ipiranga com São João. Três ambientes, chope gelado, petiscos e MPB ao vivo todo dia.',
+        address: 'Av. São João, 677 — Centro, SP',
+        hours: 'Seg–Qua 11h–1h | Qui–Sáb 11h–2h | Dom 11h–0h',
+        price: '~R$ 100 / pessoa',
+        priceLevel: '$$',
+        mapsUrl: 'https://maps.google.com/?q=Bar+Brahma+Avenida+Sao+Joao+677+Sao+Paulo',
+        image: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=600&h=800&fit=crop&auto=format',
+        bg: '#1a1500',
+      },
+      {
+        name: 'Carlino Ristorante',
+        emoji: '🍝',
+        tagline: 'Restaurante mais antigo de SP — 1881',
+        tags: ['🍝 Italiano', '🏛️ Desde 1881', '✋ Artesanal'],
+        hotTag: '🏛️ Desde 1881',
+        description: 'Fundado por Carlo Cecchini, toscano. 140 anos de tradição italiana. Massa fresca, coelho alla lucchese e polpettone num ambiente histórico encantador.',
+        address: 'R. Epitácio Pessoa, 85 — Vila Buarque, SP',
+        hours: 'Ter–Sex 11h30–15h | Sáb–Dom 11h30–16h',
+        price: 'R$ 79–97 / prato',
+        priceLevel: '$$',
+        mapsUrl: 'https://maps.google.com/?q=Carlino+Ristorante+Rua+Epitacio+Pessoa+85+Sao+Paulo',
+        image: 'https://images.unsplash.com/photo-1551183053-bf91798d765e?w=600&h=800&fit=crop&auto=format',
+        bg: '#1a0a00',
+      },
+      {
+        name: 'Notiê Rooftop',
+        emoji: '🏙️',
+        tagline: 'Guia Michelin com vista do Theatro Municipal',
+        tags: ['⭐ Michelin', '🏙️ Rooftop', '🍴 Degustação'],
+        hotTag: '⭐ Michelin',
+        description: 'Chef Onildo Rocha explora os biomas brasileiros em menus de 7 a 11 etapas no topo do Shopping Light. Vista panorâmica única do centro histórico.',
+        address: 'R. Formosa, 157 — Centro (Shopping Light, cobertura)',
+        hours: 'Seg 12h–15h30 | Ter–Sáb 12h–1h30 | Dom 12h–17h30',
+        price: 'R$ 390–520 (menu degustação)',
+        priceLevel: '$$$$',
+        mapsUrl: 'https://maps.google.com/?q=Notie+Shopping+Light+Rua+Formosa+157+Sao+Paulo',
+        image: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600&h=800&fit=crop&auto=format',
+        bg: '#000f1a',
+      },
+      {
+        name: 'Padaria Santa Tereza',
+        emoji: '🥐',
+        tagline: 'A padaria mais antiga do Brasil — 1872',
+        tags: ['🥐 Padaria', '🏛️ Desde 1872', '💰 Popular'],
+        hotTag: '🏛️ Desde 1872',
+        description: 'Fundada por portugueses, é patrimônio da cidade. Mais de mil produtos: pães frescos, salgados, doces e pratos à la carte num espaço histórico de 150 anos.',
+        address: 'Praça Dr. João Mendes, 150 — Sé, SP',
+        hours: 'Seg–Sáb 6h–22h | Dom 7h–21h',
+        price: 'R$ 20–50 / pessoa',
+        priceLevel: '$',
+        mapsUrl: 'https://maps.google.com/?q=Padaria+Santa+Tereza+Praca+Joao+Mendes+150+Sao+Paulo',
+        image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=600&h=800&fit=crop&auto=format',
+        bg: '#1a1000',
+      },
+      {
+        name: 'Casa de Francisca',
+        emoji: '🎶',
+        tagline: 'Almoço com música ao vivo no Edifício Olido',
+        tags: ['🎶 Música ao Vivo', '🍽️ Almoço', '🏛️ Cultural'],
+        hotTag: null,
+        description: 'Restaurante-cultural no coração do centro. Terça a sábado, almoço com ou sem show de música. Menu executivo criativo num ambiente histórico e acolhedor.',
+        address: 'R. José Bonifácio, 856 — Sé, SP (Ed. Olido)',
+        hours: 'Ter–Sáb 12h–16h',
+        price: '~R$ 80 / pessoa',
+        priceLevel: '$$',
+        mapsUrl: 'https://maps.google.com/?q=Casa+de+Francisca+Rua+Jose+Bonifacio+856+Sao+Paulo',
+        image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&h=800&fit=crop&auto=format',
+        bg: '#1a001a',
+      },
+      {
+        name: 'Ponto Chic',
+        emoji: '🥪',
+        tagline: 'O Bauru original — criado aqui em 1922',
+        tags: ['🥪 Bauru Original', '📜 Desde 1922', '⚡ Rápido'],
+        hotTag: '🥪 Bauru Original',
+        description: 'O sanduíche Bauru nasceu nesta casa. Desde 1922 no Largo do Paissandu: rosbife, queijo derretido, tomate e picles. Simples, clássico e perfeito.',
+        address: 'Largo do Paissandu, 27 — República, SP',
+        hours: 'Seg–Sáb 11h–22h',
+        price: 'R$ 25–60 / pessoa',
+        priceLevel: '$',
+        mapsUrl: 'https://maps.google.com/?q=Ponto+Chic+Largo+Paissandu+27+Sao+Paulo',
+        image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&h=800&fit=crop&auto=format',
+        bg: '#1a0a00',
+      },
+    ];
+
+    let currentIndex = 0;
+    let history = [];
+    let liked = [];
+    let isDragging = false;
+    let startX = 0, startY = 0, moveX = 0, moveY = 0;
+    let topCardEl = null;
+    let detailMode = false; // viewing detail without liking
+
+    function init() {
+      currentIndex = 0;
+      history = [];
+      liked = [];
+      renderStack();
+    }
+
+    function renderStack() {
+      const stack = document.getElementById('stack');
+      const finish = document.getElementById('finishScreen');
+      const actions = document.getElementById('actions');
+
+      if (currentIndex >= restaurants.length) {
+        stack.innerHTML = '';
+        actions.style.display = 'none';
+        showFinish();
+        return;
+      }
+
+      finish.classList.remove('show');
+      actions.style.display = 'flex';
+
+      // Update counter
+      document.getElementById('counter').textContent =
+        `${currentIndex + 1} / ${restaurants.length}`;
+
+      stack.innerHTML = '';
+
+      // Render up to 3 cards (back to front)
+      const indices = [];
+      for (let i = Math.min(currentIndex + 2, restaurants.length - 1); i >= currentIndex; i--) {
+        indices.push(i);
+      }
+
+      indices.forEach((idx, pos) => {
+        const card = buildCard(restaurants[idx]);
+        if (pos === indices.length - 1) {
+          card.classList.add('card-top');
+        } else if (pos === indices.length - 2) {
+          card.classList.add('card-behind-1');
+        } else {
+          card.classList.add('card-behind-2');
+        }
+        stack.appendChild(card);
+      });
+
+      topCardEl = stack.querySelector('.card-top');
+      if (topCardEl) attachEvents(topCardEl);
+    }
+
+    function buildCard(r) {
+      const card = document.createElement('div');
+      card.className = 'card';
+
+      const tagsHtml = r.tags.map(t =>
+        `<span class="tag${t === r.hotTag ? ' hot' : ''}">${t}</span>`
+      ).join('');
+
+      card.innerHTML = `
+        <img class="card-photo" src="${r.image}" alt="${r.name}"
+          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" />
+        <div class="card-photo-fallback" style="display:none;background:${r.bg}">${r.emoji}</div>
+        <div class="card-overlay">
+          <div class="card-tags">${tagsHtml}</div>
+          <div class="card-name">${r.name}</div>
+          <div class="card-tagline">${r.tagline}</div>
+          <div class="card-meta">
+            <span class="price">${r.priceLevel}</span>
+            <span>📍 ${r.address.split('—')[0].trim()}</span>
+          </div>
+        </div>
+        <div class="stamp stamp-like">VAI LÁ!</div>
+        <div class="stamp stamp-nope">PASSA</div>
+      `;
+      return card;
+    }
+
+    /* ── Drag / Swipe ── */
+    function attachEvents(card) {
+      card.addEventListener('touchstart', onStart, { passive: true });
+      card.addEventListener('touchmove', onMove, { passive: false });
+      card.addEventListener('touchend', onEnd);
+      card.addEventListener('mousedown', onStart);
+    }
+
+    function onStart(e) {
+      if (e.target.tagName === 'A' || e.target.tagName === 'BUTTON') return;
+      isDragging = true;
+      const p = e.touches ? e.touches[0] : e;
+      startX = p.clientX; startY = p.clientY;
+      moveX = 0; moveY = 0;
+      topCardEl.classList.add('no-transition');
+      if (!e.touches) {
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onEnd);
+      }
+    }
+
+    function onMove(e) {
+      if (!isDragging) return;
+      if (e.cancelable) e.preventDefault();
+      const p = e.touches ? e.touches[0] : e;
+      moveX = p.clientX - startX;
+      moveY = p.clientY - startY;
+      const rot = moveX * 0.07;
+      topCardEl.style.transform =
+        `translateX(${moveX}px) translateY(${moveY * 0.4}px) rotate(${rot}deg)`;
+
+      const ratio = Math.min(Math.abs(moveX) / 90, 1);
+      const likeEl = topCardEl.querySelector('.stamp-like');
+      const nopeEl = topCardEl.querySelector('.stamp-nope');
+      if (moveX > 15)  { likeEl.style.opacity = ratio; nopeEl.style.opacity = 0; }
+      else if (moveX < -15) { nopeEl.style.opacity = ratio; likeEl.style.opacity = 0; }
+      else             { likeEl.style.opacity = 0; nopeEl.style.opacity = 0; }
+    }
+
+    function onEnd() {
+      if (!isDragging) return;
+      isDragging = false;
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onEnd);
+      topCardEl.classList.remove('no-transition');
+
+      if (moveX > 90)       doSwipe('right');
+      else if (moveX < -90) doSwipe('left');
+      else                  snapBack();
+    }
+
+    function snapBack() {
+      topCardEl.style.transform = '';
+      topCardEl.querySelector('.stamp-like').style.opacity = 0;
+      topCardEl.querySelector('.stamp-nope').style.opacity = 0;
+    }
+
+    function doSwipe(dir) {
+      const xOut = dir === 'right' ? window.innerWidth * 1.5 : -window.innerWidth * 1.5;
+      const rot  = dir === 'right' ? 25 : -25;
+      topCardEl.style.transform = `translateX(${xOut}px) rotate(${rot}deg)`;
+      topCardEl.style.opacity = '0';
+
+      const idx = currentIndex;
+      history.push({ index: idx, dir });
+
+      if (dir === 'right') liked.push(idx);
+
+      setTimeout(() => {
+        currentIndex++;
+        renderStack();
+        if (dir === 'right') showMatch(restaurants[idx], true);
+      }, 380);
+    }
+
+    /* ── Button actions ── */
+    function swipeLeft() {
+      if (!topCardEl) return;
+      moveX = -120;
+      doSwipe('left');
+    }
+
+    function swipeRight() {
+      if (!topCardEl) return;
+      moveX = 120;
+      doSwipe('right');
+    }
+
+    function undoSwipe() {
+      if (history.length === 0) return;
+      const last = history.pop();
+      if (last.dir === 'right') liked = liked.filter(i => i !== last.index);
+      currentIndex = last.index;
+      renderStack();
+    }
+
+    function showCurrentInfo() {
+      if (currentIndex >= restaurants.length) return;
+      showMatch(restaurants[currentIndex], false);
+    }
+
+    /* ── Match / Detail screen ── */
+    function showMatch(r, isLike) {
+      document.getElementById('matchHeroImg').src = r.image;
+      document.getElementById('matchName').textContent = r.name;
+      document.getElementById('matchBadge').textContent = isLike ? 'É ESSE! 🎉' : r.tagline;
+      document.getElementById('matchAddress').textContent = r.address;
+      document.getElementById('matchHours').textContent = r.hours;
+      document.getElementById('matchPrice').textContent = r.price;
+      document.getElementById('matchDesc').textContent = r.description;
+      document.getElementById('matchMapsBtn').href = r.mapsUrl;
+      document.getElementById('matchTags').innerHTML =
+        r.tags.map(t => `<span class="info-tag">${t}</span>`).join('');
+
+      const continueBtn = document.getElementById('matchContinueBtn');
+      continueBtn.textContent = isLike
+        ? 'Ver mais restaurantes'
+        : 'Voltar e decidir';
+
+      document.getElementById('matchScreen').classList.add('show');
+      detailMode = !isLike;
+    }
+
+    function hideMatch() {
+      document.getElementById('matchScreen').classList.remove('show');
+    }
+
+    /* ── Finish ── */
+    function showFinish() {
+      const screen = document.getElementById('finishScreen');
+      const list = document.getElementById('likedList');
+      screen.classList.add('show');
+
+      if (liked.length === 0) {
+        list.innerHTML = '<p style="color:rgba(255,255,255,0.4);font-size:14px">Você não curtiu nenhum 😅<br>Tente de novo!</p>';
+      } else {
+        list.innerHTML = liked.map(i => {
+          const r = restaurants[i];
+          return `
+            <a class="liked-item" href="${r.mapsUrl}" target="_blank" rel="noopener">
+              <span class="liked-emoji">${r.emoji}</span>
+              <div>
+                <div class="liked-name">${r.name}</div>
+                <div class="liked-addr">${r.address}</div>
+              </div>
+            </a>`;
+        }).join('');
+      }
+    }
+
+    function restart() {
+      document.getElementById('finishScreen').classList.remove('show');
+      init();
+    }
+
+    init();
+  </script>
+</body>
+</html>
