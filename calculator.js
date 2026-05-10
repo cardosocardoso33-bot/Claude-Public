@@ -27,42 +27,25 @@ function factorial(n) {
 }
 
 function evaluate(expr) {
-  // Replace constants
   expr = expr.replace(/π/g, '(' + Math.PI + ')');
   expr = expr.replace(/\be\b/g, '(' + Math.E + ')');
-
-  // Replace x² shorthand
   expr = expr.replace(/(\d+(?:\.\d+)?)\s*x²/g, '(($1)**2)');
   expr = expr.replace(/x²/g, '**2');
-
-  // Replace 1/ shorthand
   expr = expr.replace(/1\/\(/g, '(1/(');
-
-  // Replace ^ with **
   expr = expr.replace(/\^/g, '**');
-
-  // Replace % for modulo or percentage
   expr = expr.replace(/(\d+(?:\.\d+)?)\s*%\s*(\d+(?:\.\d+)?)/g, '($1%$2)');
   expr = expr.replace(/(\d+(?:\.\d+)?)\s*%/g, '($1/100)');
-
-  // Replace trig functions (handle degree conversion)
   expr = expr.replace(/sin\(/g, '_sin(');
   expr = expr.replace(/cos\(/g, '_cos(');
   expr = expr.replace(/tan\(/g, '_tan(');
   expr = expr.replace(/asin\(/g, '_asin(');
   expr = expr.replace(/acos\(/g, '_acos(');
   expr = expr.replace(/atan\(/g, '_atan(');
-
-  // Replace log/ln
   expr = expr.replace(/log2\(/g, '_log2(');
   expr = expr.replace(/log\(/g, '_log(');
   expr = expr.replace(/ln\(/g, '_ln(');
-
-  // Replace sqrt, abs
   expr = expr.replace(/sqrt\(/g, '_sqrt(');
   expr = expr.replace(/abs\(/g, '_abs(');
-
-  // Replace factorial
   expr = expr.replace(/(\d+(?:\.\d+)?)\s*!/g, '_fact($1)');
 
   const _sin  = (x) => Math.sin(toRad(x));
@@ -78,7 +61,6 @@ function evaluate(expr) {
   const _abs  = (x) => Math.abs(x);
   const _fact = (x) => factorial(x);
 
-  // eslint-disable-next-line no-new-func
   return Function(
     '_sin', '_cos', '_tan', '_asin', '_acos', '_atan',
     '_log', '_log2', '_ln', '_sqrt', '_abs', '_fact',
@@ -89,9 +71,7 @@ function evaluate(expr) {
 function formatNumber(n) {
   if (typeof n !== 'number' || isNaN(n)) return 'Erro';
   if (!isFinite(n)) return n > 0 ? 'Infinito' : '-Infinito';
-  // Avoid floating-point noise
   const s = parseFloat(n.toPrecision(12)).toString();
-  // Use exponential for very large/small numbers
   if (Math.abs(n) >= 1e15 || (Math.abs(n) < 1e-9 && n !== 0)) {
     return parseFloat(n.toPrecision(10)).toExponential();
   }
@@ -105,10 +85,7 @@ function updateDisplay() {
 }
 
 function inputNum(n) {
-  if (justCalculated) {
-    expression = '';
-    justCalculated = false;
-  }
+  if (justCalculated) { expression = ''; justCalculated = false; }
   expression += n;
   expressionEl.textContent = expression;
   try {
@@ -117,37 +94,29 @@ function inputNum(n) {
       resultEl.textContent = formatNumber(val);
       resultEl.classList.remove('error');
     }
-  } catch (_) { /* ignore partial expression errors */ }
+  } catch (_) {}
   updateDisplay();
 }
 
 function inputFn(fn) {
   if (justCalculated && !isOperator(fn)) {
-    // continue with result if operator, else clear
     expression = resultEl.textContent === 'Erro' ? '' : resultEl.textContent.replace(/[^0-9.e+\-]/g, '');
     justCalculated = false;
   } else if (justCalculated && isOperator(fn)) {
     expression = resultEl.textContent;
     justCalculated = false;
   }
-
-  if (fn === 'x²') {
-    expression += '**2';
-  } else if (fn === '1/') {
-    expression = '1/(' + expression + ')';
-  } else {
-    expression += fn;
-  }
-
+  if (fn === 'x²') expression += '**2';
+  else if (fn === '1/') expression = '1/(' + expression + ')';
+  else expression += fn;
   expressionEl.textContent = expression;
-
   try {
     const val = evaluate(expression);
     if (isFinite(val) && !isNaN(val)) {
       resultEl.textContent = formatNumber(val);
       resultEl.classList.remove('error');
     }
-  } catch (_) { /* ignore */ }
+  } catch (_) {}
   updateDisplay();
 }
 
@@ -157,7 +126,6 @@ function isOperator(fn) {
 
 function inputDot() {
   if (justCalculated) { expression = '0'; justCalculated = false; }
-  // Prevent double dots in current number segment
   const segments = expression.split(/[\+\-\*\/\(\^]/);
   const last = segments[segments.length - 1];
   if (!last.includes('.')) {
@@ -179,29 +147,22 @@ function deleteLast() {
   if (justCalculated) { clearAll(); return; }
   expression = expression.slice(0, -1);
   expressionEl.textContent = expression;
-  if (expression === '') {
-    resultEl.textContent = '0';
-  } else {
-    try {
-      const val = evaluate(expression);
-      if (isFinite(val) && !isNaN(val)) resultEl.textContent = formatNumber(val);
-    } catch (_) { /* ignore */ }
-  }
+  if (expression === '') { resultEl.textContent = '0'; return; }
+  try {
+    const val = evaluate(expression);
+    if (isFinite(val) && !isNaN(val)) resultEl.textContent = formatNumber(val);
+  } catch (_) {}
   updateDisplay();
 }
 
 function toggleSign() {
   if (expression === '' || expression === '0') return;
-  if (expression.startsWith('-')) {
-    expression = expression.slice(1);
-  } else {
-    expression = '-' + expression;
-  }
+  expression = expression.startsWith('-') ? expression.slice(1) : '-' + expression;
   expressionEl.textContent = expression;
   try {
     const val = evaluate(expression);
     resultEl.textContent = formatNumber(val);
-  } catch (_) { /* ignore */ }
+  } catch (_) {}
   updateDisplay();
 }
 
@@ -237,7 +198,6 @@ function toggleInverse() {
   invBtn.classList.toggle('active', inverseMode);
 }
 
-// Keyboard support
 document.addEventListener('keydown', (e) => {
   if (e.key >= '0' && e.key <= '9') { inputNum(e.key); return; }
   if (e.key === '.') { inputDot(); return; }
